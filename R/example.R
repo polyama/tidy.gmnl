@@ -114,4 +114,5 @@ mod <- list(
 
 modelsummary(mod, group = term ~ y.level + model,"markdown")
 modelsummary(mod, group = term ~ model + y.level,"markdown")
+
 modelsummary(mod, group = y.level + term ~ model ,"markdown")
