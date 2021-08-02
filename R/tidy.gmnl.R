@@ -29,6 +29,22 @@ tidy.gmnl <- function(x, conf.int = FALSE, conf.level = 0.95, wrt = NA,  ...) {
   colnames(ret) <- c("term", "estimate", "std.error", "statistic", "p.value")
   
   }
+
+  ret <- ret %>% 
+    mutate(
+      # class.3.term    
+      class = if_else(grepl("^class\\.[0-9]+\\..*$", term), gsub("^class\\.([0-9]+)\\..*$", "Class \\1", term), ""),
+      class = if_else(grepl("^\\(class\\)([0-9]+)", term), gsub("^\\(class\\)([0-9]+)$", "Class \\1", term), class),
+      class = if_else(grepl("^.*:class[0-9]+$", term), gsub("^.*:class([0-9]+)$", "Class \\1", term), class),
+      # class.3.term    
+      term = if_else(grepl("^class\\.[0-9]+\\..*$", term), gsub("^class\\.[0-9]+\\.(.*)$", "\\1", term), term),
+      term = if_else(grepl("^\\(class\\)([0-9]+)", term), gsub("^\\(class\\)[0-9]+$", "m.Intercept", term), term),
+      term = if_else(grepl("^.*:class[0-9]+$", term), gsub("^(.*):class[0-9]+$", "m.\\1", term), term),
+      ) %>%
+    select(class, term, estimate, std.error, statistic, p.value)
+  
+  gsub("^group\\.([0-9]+)\\..*$", "\\1", "group.1.tets")
+  
   
   # if (conf.int) {
   #   ci <- broom_confint_terms(x, level = conf.level)
@@ -39,6 +55,7 @@ tidy.gmnl <- function(x, conf.int = FALSE, conf.level = 0.95, wrt = NA,  ...) {
                           conf.high = estimate + 1.96 * std.error)
   }
 
+  
   ret
 }
 
@@ -76,4 +93,7 @@ glance.gmnl <- function(x, ...) {
     )
   )
 }
+
+
+
 
