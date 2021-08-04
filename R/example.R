@@ -1,9 +1,14 @@
-install.packages("modelsummary")
+library(remotes)
+
+detach("package:modelsummary", unload = TRUE)
+remotes::install_github('vincentarelbundock/modelsummary')
+library(modelsummary)
+
+#install.packages("modelsummary")
 library("gmnl")
 library("mlogit")
 library(tidyverse)
 library(data.table)
-library(modelsummary)
 library(stringr)
 
 source("R/tidy.gmnl.R")
@@ -87,7 +92,13 @@ source("R/tidy.gmnl.R")
 
 get_estimates(Elec.lc) 
 
-modelsummary(list(Elec.mm,Elec.lc), group = term ~ model + class, 
+modelsummary(list(Elec.mm,Elec.lc), group = class + term ~ model , 
+             statistic = NULL, 
+             estimate = "{estimate} ({std.error}){stars}", "markdown") 
+
+modlc = list("mm mnl" = Elec.mm, "latent class" = Elec.lc)
+
+modelsummary(mod, group = term ~ model + class, 
              statistic = NULL, estimate = "{estimate} ({std.error}){stars}", "markdown") 
 modelsummary(list(Elec.mm,Elec.lc), group = term ~ class + model, 
              statistic = NULL, estimate = "{estimate} ({std.error}){stars}", "markdown") 
@@ -97,8 +108,26 @@ modelsummary(list(Elec.mm,Elec.lc), group = model + term ~ class ,
              statistic = NULL, estimate = "{estimate} ({std.error}){stars}", "markdown") 
 
 
-modelsummary(Elec.lc, group = term ~ model + class, 
-             statistic = NULL, estimate = "{estimate} ({std.error}){stars}", "markdown") 
+modelsummary(Elec.lc, group = term ~ model + class, "markdown") 
+
+
+modelsummary_wide(
+  list("mm mnl" = Elec.mm, "latent class" = Elec.lc), coef_group = "class", 
+  statistic = NULL, estimate = "{estimate} ({std.error}){stars}",
+  "markdown") 
+
+modelsummary_wide(
+  list("mm mnl" = Elec.mm), coef_group = "class", 
+  statistic = NULL, estimate = "{estimate} ({std.error}){stars}",
+  "markdown") 
+
+
+modelsummary(
+  list("mm mnl" = Elec.mm, "latent class" = Elec.lc), 
+  coef_group = "class", 
+  group = term ~ model + class , 
+  statistic = NULL, estimate = "{estimate} ({std.error}){stars}",
+  "markdown") 
 
 ###########################
 ###########################
@@ -119,12 +148,13 @@ mod <- list(
 modelsummary(mod, group = term ~ y.level + model,"markdown")
 modelsummary(mod, group = term ~ model + y.level,"markdown")
 
-modelsummary(mod, group = y.level + term ~ model,
-             gof_map = gm, 
-             gof_omit=FALSE,
-             "markdown")
 
 
+modelsummary(mod, group = y.level + term ~ model,"markdown")
+modelsummary(mod, group = term + y.level ~ model,"markdown")
 
-modelsummary(mod, group = term ~ model + y.level,"markdown", 
-             gof_map = gm, gof_omit=FALSE)
+modelsummary_wide(mod, group = term  ~ y.level + model,"markdown")
+
+modelsummary_wide(mod, "markdown")
+
+
