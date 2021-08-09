@@ -1,5 +1,8 @@
 # add custom functions to extract estimates (tidy) and goodness-of-fit (glance) information
 
+require(tidyverse)
+
+
 tidy.gmnl <- function(x, conf.int = FALSE, conf.level = 0.95, wrt = NA,  ...) {
   
   if (!inherits(x, "gmnl")) stop("The model was not estimated using gmnl")
@@ -40,10 +43,12 @@ tidy.gmnl <- function(x, conf.int = FALSE, conf.level = 0.95, wrt = NA,  ...) {
         class = if_else(grepl("^class\\.[0-9]+\\..*$", term), gsub("^class\\.([0-9]+)\\..*$", "Class \\1", term), ""),
         class = if_else(grepl("^\\(class\\)([0-9]+)", term), gsub("^\\(class\\)([0-9]+)$", "Class \\1", term), class),
         class = if_else(grepl("^.*:class[0-9]+$", term), gsub("^.*:class([0-9]+)$", "Class \\1", term), class),
+        class = if_else(grepl("^class[0-9]+:.*$", term), gsub("^class([0-9]+):.*$", "Class \\1", term), class),
         # class.3.term    
         term = if_else(grepl("^class\\.[0-9]+\\..*$", term), gsub("^class\\.[0-9]+\\.(.*)$", "\\1", term), term),
         term = if_else(grepl("^\\(class\\)([0-9]+)", term), gsub("^\\(class\\)[0-9]+$", "cl.m Intercept", term), term),
         term = if_else(grepl("^.*:class[0-9]+$", term), gsub("^(.*):class[0-9]+$", "cl.m \\1", term), term),
+        term = if_else(grepl("^class[0-9]+:.*$", term), gsub("^class[0-9]+:(.*)$", "cl.m \\1", term), term),
       ) %>%
       select(class, term, estimate, std.error, statistic, p.value)
   }
@@ -72,6 +77,7 @@ tidy.gmnl <- function(x, conf.int = FALSE, conf.level = 0.95, wrt = NA,  ...) {
   #   ci <- broom_confint_terms(x, level = conf.level)
   #   ret <- dplyr::left_join(ret, ci, by = "term")
   # }
+  
   if (conf.int) {
     ret <- ret %>% mutate(conf.low = estimate - 1.96 * std.error,
                           conf.high = estimate + 1.96 * std.error)

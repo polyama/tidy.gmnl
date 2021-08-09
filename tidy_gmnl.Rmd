@@ -28,3 +28,13 @@ plot(pressure)
 ```
 
 Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.
+
+
+
+```{r modelsummary, echo=FALSE}
+modelsummary(
+  list("S-MNL model, ASCs not scaled" = smnl,
+       "MIXL model with observed heterogeneity" = mixl.hier),
+  "markdown", 
+  title = "Examples using the between Sydney and Melbourne, Australia from the AER package") 
+```
