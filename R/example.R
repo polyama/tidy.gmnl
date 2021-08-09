@@ -1,11 +1,10 @@
-library(remotes)
+# library(remotes)
+# detach("package:modelsummary", unload = TRUE)
+# remotes::install_github('vincentarelbundock/modelsummary')
+#install.packages("gmnl")
 
-detach("package:modelsummary", unload = TRUE)
-remotes::install_github('vincentarelbundock/modelsummary')
 library(modelsummary)
-
-#install.packages("modelsummary")
-library("gmnl")
+library(gmnl)
 library("mlogit")
 library(tidyverse)
 library(data.table)
@@ -33,10 +32,19 @@ Elec.cor <- gmnl(choice ~ pf + cl + loc + wk + tod + seas| 0, data = Electr,
                  ranp = c(cl = "n", loc = "n", wk = "n", tod = "n", seas = "n"),
                  correlation = TRUE)
 summary(Elec.cor)
-cov.gmnl(Elec.cor)
 se.cov.gmnl(Elec.cor)
 se.cov.gmnl(Elec.cor, sd = TRUE)
 cor.gmnl(Elec.cor)
+
+wtp.gmnl(Elec.cor,wrt="pf")
+
+vcov(Elec.cor, what = "coefficient")
+vcov(Elec.cor, what = "ranp")
+vcov(Elec.cor, what = "ranp", type = "sd")
+
+wtp.gmnl(Elec.mnl,wrt="pf")
+
+getSummary.gmnl(Elec.cor)
 
 ## Estimate a G-MNL model, where ASCs are also random
 Electr$asc2 <- as.numeric(Electr$alt == 2)
@@ -52,9 +60,35 @@ Elec.gmnl <- gmnl(choice ~ pf + cl + loc + wk + tod + seas + asc2 + asc3 + asc4 
                   notscale = c(rep(0, 6), 1, 1, 1),
                   ranp = c(cl = "n", loc = "n", wk = "n", tod = "n", seas = "n",
                            asc2 = "n", asc3 = "n", asc4 = "n"))
-summary(Elec.gmnl)
 
-modelsummary(list(Elec.cor, Elec.gmnl),
+Elec.gmnl.cor <- gmnl(choice ~ pf + cl + loc + wk + tod + seas + asc2 + asc3 + asc4 | 0,
+                  data = Electr,
+                  subset = 1:3000,
+                  model = 'gmnl',
+                  R = 30,
+                  panel = TRUE, correlation = TRUE,
+                  notscale = c(rep(0, 6), 1, 1, 1),
+                  ranp = c(cl = "n", loc = "n", wk = "n", tod = "n", seas = "n",
+                           asc2 = "n", asc3 = "n", asc4 = "n"))
+summary(Elec.gmnl)
+wtp.gmnl(Elec.gmnl,wrt="pf")
+wtp.gmnl(Elec.gmnl.cor, wrt="pf")
+
+broom::tidy(Elec.gmnl)
+
+modelsummary(list(Elec.mnl, Elec.cor, Elec.gmnl),
+             wrt = "pf",
+             statistic = NULL, estimate = "{estimate}{stars} ({std.error})",
+             "markdown"
+) 
+
+modelsummary(list(Elec.mnl, Elec.cor, Elec.gmnl, Elec.gmnl.cor),
+             statistic = NULL, estimate = "{estimate}{stars} ({std.error})",
+             "markdown"
+) 
+
+modelsummary(list(Elec.mnl),
+             wrt = "pf",
              statistic = NULL, estimate = "{estimate}{stars} ({std.error})",
              "markdown"
 ) 
@@ -88,9 +122,27 @@ Elec.mm <- gmnl(choice ~ pf + cl + loc + wk + tod | 0 | 0 | 0 | 1 + seas,
                 iterlim = 500)
 summary(Elec.mm)
 
-source("R/tidy.gmnl.R")
+shares <- function(obj){
+  if (!inherits(obj, "gmnl")) stop("The model was not estimated using gmnl")
+  #if (obj$model != "lc") stop("The model is not a LC-MNL")
+  bhat <- coef(obj)
+  cons_class <- c(0, bhat[grep("(class)", names(bhat), fixed = TRUE)])
+  Q <- length(cons_class)
+  shares <- exp(cons_class) / sum(exp(cons_class))
+  names(shares) <- paste("share q", 1:Q, sep = "=")  
+  return(shares)
+}
 
-get_estimates(Elec.lc) 
+shares <- shares(Elec.lc)
+shares <- shares(Elec.mm)
+
+Elec.mm$model
+
+exp(coef(lc)["(class)2"]) / (exp(0) + exp(coef(lc)["(class)2"]))
+
+source('R/lc_helpers.R')
+
+source("R/tidy.gmnl.R")
 
 modelsummary(list(Elec.mm,Elec.lc), group = class + term ~ model , 
              statistic = NULL, 
@@ -117,44 +169,44 @@ modelsummary_wide(
   "markdown") 
 
 modelsummary_wide(
-  list("mm mnl" = Elec.mm), coef_group = "class", 
-  statistic = NULL, estimate = "{estimate} ({std.error}){stars}",
-  "markdown") 
+  list("mm mnl" = Elec.mm), coef_group = "class",
+  #"markdown", 
+  statistic = NULL, estimate = "{estimate} ({std.error}){stars}") 
 
 
 modelsummary(
   list("mm mnl" = Elec.mm, "latent class" = Elec.lc), 
   coef_group = "class", 
   group = term ~ model + class , 
-  statistic = NULL, estimate = "{estimate} ({std.error}){stars}",
-  "markdown") 
+  #"markdown",
+  statistic = NULL, estimate = "{estimate} ({std.error}){stars}") 
 
-###########################
-###########################
-
-library(nnet)
-
-dat_multinom <- mtcars
-dat_multinom$cyl <- sprintf("Cyl: %s", dat_multinom$cyl)
-
-gm <- modelsummary::gof_map
-gm$omit <- FALSE
-
-
-mod <- list(
-  nnet::multinom(cyl ~ mpg, data = dat_multinom, trace = FALSE),
-  nnet::multinom(cyl ~ mpg + drat, data = dat_multinom, trace = FALSE))
-
-modelsummary(mod, group = term ~ y.level + model,"markdown")
-modelsummary(mod, group = term ~ model + y.level,"markdown")
-
-
-
-modelsummary(mod, group = y.level + term ~ model,"markdown")
-modelsummary(mod, group = term + y.level ~ model,"markdown")
-
-modelsummary_wide(mod, group = term  ~ y.level + model,"markdown")
-
-modelsummary_wide(mod, "markdown")
-
-
+# ###########################
+# ###########################
+# 
+# library(nnet)
+# 
+# dat_multinom <- mtcars
+# dat_multinom$cyl <- sprintf("Cyl: %s", dat_multinom$cyl)
+# 
+# gm <- modelsummary::gof_map
+# gm$omit <- FALSE
+# 
+# 
+# mod <- list(
+#   nnet::multinom(cyl ~ mpg, data = dat_multinom, trace = FALSE),
+#   nnet::multinom(cyl ~ mpg + drat, data = dat_multinom, trace = FALSE))
+# 
+# modelsummary(mod, group = term ~ y.level + model,"markdown")
+# modelsummary(mod, group = term ~ model + y.level,"markdown")
+# 
+# 
+# 
+# modelsummary(mod, group = y.level + term ~ model,"markdown")
+# modelsummary(mod, group = term + y.level ~ model,"markdown")
+# 
+# modelsummary_wide(mod, group = term  ~ y.level + model,"markdown")
+# 
+# modelsummary_wide(mod, "markdown")
+# 
+# 

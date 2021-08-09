@@ -2,7 +2,7 @@
 
 tidy.gmnl <- function(x, conf.int = FALSE, conf.level = 0.95, wrt = NA,  ...) {
   
-  #warn_on_subclass(x)
+  if (!inherits(x, "gmnl")) stop("The model was not estimated using gmnl")
   
   nobs = x$logLik$nobs
   df = x$logLik$nobs - x$logLik$nparam
@@ -10,7 +10,9 @@ tidy.gmnl <- function(x, conf.int = FALSE, conf.level = 0.95, wrt = NA,  ...) {
   if (!is.na(wrt))
   {
     capture.output(
-    ret <- as_tibble(as.data.frame(wtp.gmnl(x,wrt=wrt)), rownames = "term" ),
+    ret <- as_tibble(as.data.frame(wtp.gmnl(x,wrt=wrt)), rownames = "term" ) %>% 
+      filter(substr(term,1,3) != "sd.") %>% 
+      mutate(term = paste("wtp", term, sep = ".")),
     file='NUL')
     colnames(ret) <- c("term", "estimate", "std.error", "statistic", "p.value")
     
@@ -30,21 +32,41 @@ tidy.gmnl <- function(x, conf.int = FALSE, conf.level = 0.95, wrt = NA,  ...) {
   
   }
 
-  ret <- ret %>% 
-    mutate(
-      # class.3.term    
-      class = if_else(grepl("^class\\.[0-9]+\\..*$", term), gsub("^class\\.([0-9]+)\\..*$", "Class \\1", term), ""),
-      class = if_else(grepl("^\\(class\\)([0-9]+)", term), gsub("^\\(class\\)([0-9]+)$", "Class \\1", term), class),
-      class = if_else(grepl("^.*:class[0-9]+$", term), gsub("^.*:class([0-9]+)$", "Class \\1", term), class),
-      # class.3.term    
-      term = if_else(grepl("^class\\.[0-9]+\\..*$", term), gsub("^class\\.[0-9]+\\.(.*)$", "\\1", term), term),
-      term = if_else(grepl("^\\(class\\)([0-9]+)", term), gsub("^\\(class\\)[0-9]+$", "cl.m Intercept", term), term),
-      term = if_else(grepl("^.*:class[0-9]+$", term), gsub("^(.*):class[0-9]+$", "cl.m \\1", term), term),
+  if (x$model %in% c("lc", "mm"))
+  {  
+    ret <- ret %>% 
+      mutate(
+        # class.3.term    
+        class = if_else(grepl("^class\\.[0-9]+\\..*$", term), gsub("^class\\.([0-9]+)\\..*$", "Class \\1", term), ""),
+        class = if_else(grepl("^\\(class\\)([0-9]+)", term), gsub("^\\(class\\)([0-9]+)$", "Class \\1", term), class),
+        class = if_else(grepl("^.*:class[0-9]+$", term), gsub("^.*:class([0-9]+)$", "Class \\1", term), class),
+        # class.3.term    
+        term = if_else(grepl("^class\\.[0-9]+\\..*$", term), gsub("^class\\.[0-9]+\\.(.*)$", "\\1", term), term),
+        term = if_else(grepl("^\\(class\\)([0-9]+)", term), gsub("^\\(class\\)[0-9]+$", "cl.m Intercept", term), term),
+        term = if_else(grepl("^.*:class[0-9]+$", term), gsub("^(.*):class[0-9]+$", "cl.m \\1", term), term),
       ) %>%
-    select(class, term, estimate, std.error, statistic, p.value)
+      select(class, term, estimate, std.error, statistic, p.value)
+  }
   
-  gsub("^group\\.([0-9]+)\\..*$", "\\1", "group.1.tets")
+  # shares <- function(obj){
+  #   if (!inherits(obj, "gmnl")) stop("The model was not estimated using gmnl")
+  #   #if (obj$model != "lc") stop("The model is not a LC-MNL")
+  #   bhat <- coef(obj)
+  #   cons_class <- c(0, bhat[grep("(class)", names(bhat), fixed = TRUE)])
+  #   Q <- length(cons_class)
+  #   shares <- exp(cons_class) / sum(exp(cons_class))
+  #   names(shares) <- paste("share q", 1:Q, sep = "=")  
+  #   return(shares)
+  # }
   
+  # shares <- function(obj){
+  #   bhat <- coef(obj)
+  #   cons_class <- c(0, bhat[grep("(class)", names(bhat), fixed = TRUE)])
+  #   Q <- length(cons_class)
+  #   shares <- exp(cons_class) / sum(exp(cons_class))
+  #   names(shares) <- paste("share q", 1:Q, sep = "=")  
+  #   return(shares)
+  # }
   
   # if (conf.int) {
   #   ci <- broom_confint_terms(x, level = conf.level)
