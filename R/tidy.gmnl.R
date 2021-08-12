@@ -10,8 +10,8 @@ tidy.gmnl <- function(x, conf.int = FALSE, conf.level = 0.95, wrt = NA,  ...) {
   nobs = x$logLik$nobs
   df = x$logLik$nobs - x$logLik$nparam
 
-  # WTP
   if (!is.na(wrt)) { 
+    # WTP
     if (x$model %in% c("lc", "mm")) {
       # latent class models - process by class
       ret <- NULL
@@ -28,7 +28,7 @@ tidy.gmnl <- function(x, conf.int = FALSE, conf.level = 0.95, wrt = NA,  ...) {
         ret <- bind_rows(ret, ret1)
       }
     } else {
-      # al other models class models
+      # all other models 
       capture.output(
         ret <- as_tibble(as.data.frame(wtp.gmnl(x,wrt=wrt)), rownames = "term" ) %>% 
           # only for the coefficients
@@ -38,10 +38,14 @@ tidy.gmnl <- function(x, conf.int = FALSE, conf.level = 0.95, wrt = NA,  ...) {
       colnames(ret) <- c("term", "estimate", "std.error", "statistic", "p.value")
     }
   } else  {
+    # coefficients estimates
     if (x$correlation == TRUE){
+      # for correlated random models extract coefficients 
+      # separately from standard deviations 
       ret <- as_tibble(summary(x)$CoefTable, rownames = "term")%>% 
         filter(!grepl("^sd\\.|^class\\.[0-9]+\\.sd\\.", term))
       if (x$model %in% c("mm")){  
+        #latent class - by class
         for(q in 1:x$Q){
           capture.output(
             ret <- bind_rows(
@@ -50,6 +54,7 @@ tidy.gmnl <- function(x, conf.int = FALSE, conf.level = 0.95, wrt = NA,  ...) {
             file='NUL')
         }
       } else {
+        # uncorrelated models simply get coeftable
         capture.output(
           ret <- bind_rows(
             ret, as_tibble(se.cov.gmnl(x, sd = TRUE), rownames = "term") %>%
