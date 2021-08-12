@@ -160,3 +160,4 @@ modelsummary_wide(
   title = "WTP for latent class models using the Electricity data set from the mlogit package", 
   "markdown"
 ) 
+

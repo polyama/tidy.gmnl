@@ -13,6 +13,7 @@ tidy.gmnl <- function(x, conf.int = FALSE, conf.level = 0.95, wrt = NA,  ...) {
   #WTP
   if (!is.na(wrt)) { 
     if (x$model %in% c("lc", "mm")) {
+      # 
       ret <- NULL
       for(q in 1:x$Q){
         capture.output(
@@ -95,12 +96,12 @@ glance.gmnl <- function(x, ...) {
   with(
     summary(x),
     tibble(
-      nsubj = length(x$prob.ind),
+      # added number of individuals
+      nind = length(x$prob.ind),
       nobs = x$logLik$nobs,
       logLik = as.numeric(stats::logLik(x)),
       AIC = stats::AIC(x),
-      BIC = stats::BIC(x),
-      df.residual = df.residual(x)
+      BIC = stats::BIC(x)
     )
   )
 }
