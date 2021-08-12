@@ -10,23 +10,28 @@ tidy.gmnl <- function(x, conf.int = FALSE, conf.level = 0.95, wrt = NA,  ...) {
   nobs = x$logLik$nobs
   df = x$logLik$nobs - x$logLik$nparam
 
-  #WTP
+  # WTP
   if (!is.na(wrt)) { 
     if (x$model %in% c("lc", "mm")) {
-      # 
+      # latent class models - process by class
       ret <- NULL
       for(q in 1:x$Q){
         capture.output(
           ret1 <- as_tibble(as.data.frame(wtp.gmnl(x,wrt=paste("class", q, wrt, sep = "."))), rownames = "term" ) %>% 
+            # only for the coefficients
             filter(substr(term,9,11) != "sd.") %>% 
-            filter(substr(term,1,7) == paste("class", q, sep = ".")),
+            # only current class
+            filter(substr(term,1,7) == paste("class", q, sep = ".")) %>% 
+            mutate(term = paste("wtp", term, sep = ".")), 
           file='NUL')
         colnames(ret1) <- c("term", "estimate", "std.error", "statistic", "p.value")
         ret <- bind_rows(ret, ret1)
       }
     } else {
+      # al other models class models
       capture.output(
         ret <- as_tibble(as.data.frame(wtp.gmnl(x,wrt=wrt)), rownames = "term" ) %>% 
+          # only for the coefficients
           filter(substr(term,1,3) != "sd.") %>% 
           mutate(term = paste("wtp", term, sep = ".")), 
         file='NUL')
@@ -57,24 +62,32 @@ tidy.gmnl <- function(x, conf.int = FALSE, conf.level = 0.95, wrt = NA,  ...) {
   colnames(ret) <- c("term", "estimate", "std.error", "statistic", "p.value")
   }
 
+  # for latent class models:
+  # - create class and term columns from term column 
+  # - calculate class shares 
   if (x$model %in% c("lc", "mm")) {  
     ret <- ret %>% 
       mutate(
-        # class.3.term    
+        # class.1.term    
+        # add class column    
         class = if_else(grepl("^class\\.[0-9]+\\..*$", term), gsub("^class\\.([0-9]+)\\..*$", "Class \\1", term), ""),
+        class = if_else(grepl("^wtp.class\\.[0-9]+\\..*$", term), gsub("^wtp.class\\.([0-9]+)\\..*$", "Class \\1", term), class),
         class = if_else(grepl("^\\(class\\)([0-9]+)", term), gsub("^\\(class\\)([0-9]+)$", "Class \\1", term), class),
         class = if_else(grepl("^.*:class[0-9]+$", term), gsub("^.*:class([0-9]+)$", "Class \\1", term), class),
         class = if_else(grepl("^class[0-9]+:.*$", term), gsub("^class([0-9]+):.*$", "Class \\1", term), class),
-        # class.3.term    
+        # class.1.term    
+        # remove "class" from term column    
         term = if_else(grepl("^class\\.[0-9]+\\..*$", term), gsub("^class\\.[0-9]+\\.(.*)$", "\\1", term), term),
+        term = if_else(grepl("^wtp.class\\.[0-9]+\\..*$", term), gsub("^wtp.class\\.[0-9]+\\.(.*)$", "wtp.\\1", term), term),
         term = if_else(grepl("^\\(class\\)([0-9]+)", term), gsub("^\\(class\\)[0-9]+$", "cl.m Intercept", term), term),
         term = if_else(grepl("^.*:class[0-9]+$", term), gsub("^(.*):class[0-9]+$", "cl.m \\1", term), term),
         term = if_else(grepl("^class[0-9]+:.*$", term), gsub("^class[0-9]+:(.*)$", "cl.m \\1", term), term),
       ) %>%
       select(class, term, estimate, std.error, statistic, p.value)
     
+    # calculate class shares
     if (x$model %in% c("lc")) {Qir <- x$Qir} else {Qir <- x$Qir$wnq} 
-     Q <- x$Q
+    Q <- x$Q
     shares <- bind_cols(class =  paste("Class", 1:Q, sep = " "), 
                         term = rep("cl.shares", Q), 
                         estimate = colMeans(Qir)
