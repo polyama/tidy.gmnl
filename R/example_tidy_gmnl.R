@@ -58,7 +58,9 @@ Elec.gmnl <- gmnl(choice ~ pf + cl + loc + wk + tod + seas + asc2 + asc3 + asc4 
                 asc2 = "n", asc3 = "n", asc4 = "n"))
 summary(Elec.gmnl)
 
-# coefficients estimates
+# modelsummary for coefficients estimates - as usual
+# "gof_map = gm" to place and format number of individuals (Num.Ind)
+# for mixed models include standard deviations of random parameters
 modelsummary(
   list("MNL model " = Elec.mnl,
        "MIXL with correlated RPs" = Elec.cor,
@@ -99,7 +101,10 @@ modelsummary(
 #   |Log.Lik |     -869.525      |         -706.918         |        -734.107        |
    
 
-# wtp (omits wtp for standard deviations)
+# to display wtp, include parameter wrt = "cost variable"
+# varible named prefixed bty wtp.
+# wtps are omited for standard deviations
+
 modelsummary(
   list("MNL model " = Elec.mnl,
        "MIXL with correlated RPs" = Elec.cor,
@@ -156,7 +161,12 @@ Elec.mm.c <- gmnl(choice ~ pf + cl + loc + wk + tod + seas| 0 | 0 | 0 | 1 + loc 
                 iterlim = 500)
 summary(Elec.mm.c)
 
-# coefficients estimates
+# to format coefficients estimates of latent class models 
+# better to use modelsummary_wide 
+# column "class" contains class ID
+# class membership variables are preceeded by "cl."
+# cl.shares are shares of latent classes
+
 modelsummary_wide(
   list("LC model" = Elec.lc, "MM-MIXL corr" = Elec.mm.c),
   coef_group = "class", 
@@ -192,7 +202,13 @@ modelsummary_wide(
 #   |BIC            |      1680.9       |                   |        1686.0        |                      |
 #   |Log.Lik        |     -790.805      |                   |       -654.331       |                      |   
 
-# wtp (omits wtp for standard deviations and for class membership coefficients)
+
+# WTPs for latent class models 
+# WTPs are omitted for 
+# -- standard deviations 
+# -- class membership coefficients
+# -- standard deviations
+
 modelsummary_wide(
   list("LC model" = Elec.lc, "MM-MIXL corr" = Elec.mm.c),
   coef_group = "class", 
@@ -218,3 +234,39 @@ modelsummary_wide(
 #   |AIC       |      1611.6       |                   |        1422.7        |                      |
 #   |BIC       |      1680.9       |                   |        1686.0        |                      |
 #   |Log.Lik   |     -790.805      |                   |       -654.331       |                      |
+
+# try modelsummary for latent class 
+# Order of columns OK but it does not output goodness of fit
+
+modelsummary(
+  list("LC model" = Elec.lc, "MM-MIXL corr" = Elec.mm.c),
+  group = term ~ class + model, 
+  statistic = NULL, estimate = "{estimate}{stars} ({std.error})",
+  gof_map = gm,
+  title = "Coefficients estimates for latent class models",
+  "markdown"
+) 
+
+#   Table: Coefficients estimates for latent class models
+# 
+#   |              | Class 1 / LC model | Class 1 / MM-MIXL corr | Class 2 / LC model | Class 2 / MM-MIXL corr |
+#   |:--------------|:------------------:|:----------------------:|:------------------:|:----------------------:|
+#   |pf             | -0.435*** (0.087)  |   -1.000*** (0.106)    | -0.849*** (0.097)  |    -3.143** (1.057)    |
+#   |cl             | -0.187*** (0.030)  |    -0.111* (0.051)     |  -0.116* (0.046)   |    -1.766** (0.612)    |
+#   |loc            |  1.222*** (0.161)  |    2.088*** (0.286)    |  1.610*** (0.271)  |    18.572** (6.132)    |
+#   |wk             |  0.964*** (0.142)  |    1.842*** (0.241)    |  1.397*** (0.214)  |     4.409* (1.919)     |
+#   |tod            | -3.154*** (0.689)  |   -9.540*** (0.919)    | -9.432*** (0.862)  |   -21.974** (7.828)    |
+#   |seas           | -3.422*** (0.692)  |   -9.690*** (0.920)    | -9.300*** (0.878)  |   -23.681** (8.641)    |
+#   |cl.m Intercept |                    |                        | -1.549*** (0.245)  |   -1.108*** (0.194)    |
+#   |cl.m loc       |                    |                        |  1.696*** (0.271)  |     -0.160 (0.239)     |
+#   |cl.m wk        |                    |                        |  1.427*** (0.273)  |    -0.577* (0.260)     |
+#   |cl.shares      |       0.562        |         0.800          |       0.438        |         0.200          |
+#   |sd.pf          |                    |     0.319* (0.158)     |                    |    3.782** (1.164)     |
+#   |sd.cl          |                    |    0.325*** (0.053)    |                    |    6.928** (2.621)     |
+#   |sd.loc         |                    |    1.831*** (0.327)    |                    |    17.267** (5.731)    |
+#   |sd.wk          |                    |    1.535*** (0.247)    |                    |    15.404** (5.242)    |
+#   |sd.tod         |                    |    2.511*** (0.618)    |                    |    24.417** (7.874)    |
+#   |sd.seas        |                    |    2.660*** (0.570)    |                    |    24.740** (8.234)    |
+#   > 
+
+
