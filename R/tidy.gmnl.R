@@ -1,5 +1,5 @@
 # add custom functions to extract estimates (tidy) and goodness-of-fit (glance) information
-# Maksym Polyakov 2021/08/12
+# Maksym Polyakov 2021/08/14
 
 require(tidyverse)
 
@@ -10,9 +10,10 @@ tidy.gmnl <- function(x, conf.int = FALSE, conf.level = 0.95, wrt = NA,  ...) {
   nobs = x$logLik$nobs
   df = x$logLik$nobs - x$logLik$nparam
 
-  if (!is.na(wrt) & !(wrt %in% names(x$coefficients))) {print(paste(wrt, "is not a variable")) }
+  if (!is.na(wrt) & !(wrt %in% str_replace_all(names(x$coefficients), "^class.[0-9]+.", ""))) 
+    {print(paste(wrt, "is not a variable")) }
 
-  if (!is.na(wrt) & (wrt %in% names(x$coefficients))) { 
+  if (!is.na(wrt) & (wrt %in% str_replace_all(names(x$coefficients), "^class.[0-9]+.", ""))) { 
     # WTP
     if (x$model %in% c("lc", "mm")) {
       # latent class models - process by class
