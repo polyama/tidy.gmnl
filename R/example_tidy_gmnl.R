@@ -203,6 +203,7 @@ modelsummary_wide(
 #   |Log.Lik        |     -790.805      |                   |       -654.331       |                      |   
 
 
+
 # WTPs for latent class models 
 # WTPs are omitted for 
 # -- standard deviations 
@@ -267,6 +268,5 @@ modelsummary(
 #   |sd.wk          |                    |    1.535*** (0.247)    |                    |    15.404** (5.242)    |
 #   |sd.tod         |                    |    2.511*** (0.618)    |                    |    24.417** (7.874)    |
 #   |sd.seas        |                    |    2.660*** (0.570)    |                    |    24.740** (8.234)    |
-#   > 
 
 
