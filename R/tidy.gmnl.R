@@ -95,7 +95,7 @@ tidy.gmnl <- function(x, conf.int = FALSE, conf.level = 0.95, wrt = NA,  ...) {
       select(class, term, estimate, std.error, statistic, p.value)
     
     # calculate class shares
-    if (x$model %in% c("lc". "mm")) {Qir <- x$Qir} else {Qir <- x$Qir$wnq} 
+    if (x$model %in% c("lc")) {Qir <- x$Qir} else {Qir <- x$Qir$wnq} 
     Q <- x$Q
     shares <- bind_cols(class =  paste("Class", 1:Q, sep = " "), 
                         term = rep("cl.shares", Q), 
