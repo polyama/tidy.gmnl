@@ -31,6 +31,11 @@ tidy.gmnl <- function(x, conf.int = FALSE, conf.level = 0.95, wrt = NA,  ...) {
         colnames(ret1) <- c("term", "estimate", "std.error", "statistic", "p.value")
         ret <- bind_rows(ret, ret1)
       }
+      # add class membership vars
+      ret1 <- as_tibble(summary(x)$CoefTable, rownames = "term") %>% 
+        filter(grepl("^\\(class\\)([0-9]+)|^.*:class[0-9]+$|^class[0-9]+:.*$", term))
+      colnames(ret1) <- c("term", "estimate", "std.error", "statistic", "p.value")
+      ret <- bind_rows(ret, ret1)
     } else {
       # all other models 
       capture.output(
@@ -41,7 +46,8 @@ tidy.gmnl <- function(x, conf.int = FALSE, conf.level = 0.95, wrt = NA,  ...) {
         file='NUL')
       colnames(ret) <- c("term", "estimate", "std.error", "statistic", "p.value")
     }
-  } else  {
+    # end WTP
+  } else {
     # coefficients estimates
     if (x$correlation == TRUE){
       # for correlated random models extract coefficients 
@@ -69,7 +75,7 @@ tidy.gmnl <- function(x, conf.int = FALSE, conf.level = 0.95, wrt = NA,  ...) {
       ret <- as_tibble(summary(x)$CoefTable, rownames = "term")
     }
   colnames(ret) <- c("term", "estimate", "std.error", "statistic", "p.value")
-  }
+  } # end coefficients ?
 
   # for latent class models:
   # - create class and term columns from term column 
