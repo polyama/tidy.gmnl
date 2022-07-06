@@ -1,5 +1,6 @@
 # library(remotes)
-# remotes::install_github('vincentarelbundock/modelsummary')
+remotes::install_github('vincentarelbundock/modelsummary', force = TRUE)
+install.packages('modelsummary')
 
 library(modelsummary)
 library(gmnl)
@@ -66,7 +67,7 @@ modelsummary(
        "MIXL with correlated RPs" = Elec.cor,
        "G-MNL with random ASCs" = Elec.gmnl),
   estimate = "{estimate}{stars} ({std.error})",  statistic = NULL, 
-  gof_map = gm,
+#  gof_map = gm,
   title = "Coefficients for MNL, MIXL and G-MNL models",
   "markdown"
 ) 
